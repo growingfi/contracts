@@ -157,11 +157,6 @@ contract GrowStrategyAutoLike is BaseGrowStrategy, ReentrancyGuard {
         }
     }
 
-    function pricePreShare() public view returns(uint256) {
-        if (totalShares == 0) return 0;
-        return _underlyingShares().div(totalShares);
-    }
-
     // --------------------------------------------------------------
     // User Write Interface
     // --------------------------------------------------------------
