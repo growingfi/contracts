@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -200,8 +201,9 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
     function getPendingBlockReward(address strategyAddress, address userAddress) public view returns (uint256) {
         StrategyInfo storage strategy = strategies[strategyAddress];
         UserInfo storage user = strategyUsers[strategyAddress][userAddress];
+        uint256 currentUserShares = IGrowStrategy(strategyAddress).sharesOf(userAddress);
 
-        if (user.shares > 0) {
+        if (currentUserShares > 0) {
             uint256 tokenSupply = strategy.totalSupply;
             uint256 multiplier = blockRewardGetMultiplier(strategy.blockRewardLastRewardBlock, block.number);
 
@@ -213,7 +215,7 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
             // = accGrowPerShare + (growReward × REWARD_DECIMAL / tokenSupply)
             uint256 accGrowPerShare = strategy.blockRewardAccGrowPerShare.add(growReward.mul(REWARD_DECIMAL).div(tokenSupply));
 
-            uint256 pendingBlockReward = user.shares.mul(accGrowPerShare).div(REWARD_DECIMAL).sub(user.blockRewardDebt);
+            uint256 pendingBlockReward = currentUserShares.mul(accGrowPerShare).div(REWARD_DECIMAL).sub(user.blockRewardDebt);
 
             return pendingBlockReward;
         }
@@ -321,16 +323,17 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
         _getRewards(strategyAddress, userAddress);
     }
 
-    function updateRewardDebt(address strategyAddress, address userAddress) private {
+    function updateRewardDebt(address strategyAddress, address userAddress, uint256 sharesUpdateTo) private {
         StrategyInfo storage strategy = strategies[strategyAddress];
         UserInfo storage user = strategyUsers[strategyAddress][userAddress];
 
-        user.blockRewardDebt = user.shares.mul(strategy.blockRewardAccGrowPerShare).div(REWARD_DECIMAL);
+        user.blockRewardDebt = sharesUpdateTo.mul(strategy.blockRewardAccGrowPerShare).div(REWARD_DECIMAL);
     }
 
     function settlementRewards(address strategyAddress, address userAddress) private {
         StrategyInfo storage strategy = strategies[strategyAddress];
         UserInfo storage user = strategyUsers[strategyAddress][userAddress];
+        uint256 currentUserShares = IGrowStrategy(strategyAddress).sharesOf(userAddress);
 
         // 1. update reward data
         updateRewards(strategyAddress);
@@ -339,13 +342,13 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
         uint256 rewardGrows = 0;
 
         // reward by shares (Block reward & Profit reward)
-        if (user.shares > 0) {
+        if (currentUserShares > 0) {
             // Block reward
-            uint256 pendingBlockReward = user.shares
+            uint256 pendingBlockReward = currentUserShares
                 .mul(strategy.blockRewardAccGrowPerShare)
                 .div(REWARD_DECIMAL)
                 .sub(user.blockRewardDebt);
-            user.blockRewardDebt = user.shares
+            user.blockRewardDebt = currentUserShares
                 .mul(strategy.blockRewardAccGrowPerShare)
                 .div(REWARD_DECIMAL);
             rewardGrows = rewardGrows.add(pendingBlockReward);
@@ -370,53 +373,21 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
     // Share manage
     // --------------------------------------------------------------
 
-    function addUserShare(address strategyAddress, address userAddress, uint256 shares) external override onlyStrategy(strategyAddress) {
-
-        StrategyInfo storage strategy = strategies[strategyAddress];
+    function notifyUserSharesUpdate(address strategyAddress, address userAddress, uint256 sharesUpdateTo, bool isWithdraw) external override onlyStrategy(strategyAddress) {
         UserInfo storage user = strategyUsers[strategyAddress][userAddress];
+
+        // 1. check if need revert deposit reward
+        if (isWithdraw && user.depositRewardLocked > 0 && user.depositRewardUnlockedAt > block.timestamp) {
+            user.depositRewardLocked = 0;
+        }
 
         // 1. settlement current rewards
         settlementRewards(strategyAddress, userAddress);
 
-        // 2. update shares
-        user.shares = user.shares.add(shares);
-        strategy.totalSupply = strategy.totalSupply.add(shares);
+        // 2. reset reward debt base on current shares
+        updateRewardDebt(strategyAddress, userAddress, sharesUpdateTo);
 
-        // 3. reset reward debt base on current shares
-        updateRewardDebt(strategyAddress, userAddress);
-
-        emit LogAddUserShare(strategyAddress, userAddress, shares);
-    }
-
-    function removeUserShare(address strategyAddress, address userAddress, uint256 shares) external override onlyStrategy(strategyAddress) {
-        StrategyInfo storage strategy = strategies[strategyAddress];
-        UserInfo storage user = strategyUsers[strategyAddress][userAddress];
-
-        // 1. check if need revert deposit reward
-        if (user.depositRewardLocked > 0 && user.depositRewardUnlockedAt > block.timestamp) {
-            user.depositRewardLocked = 0;
-        }
-
-        // 2. settlement current rewards
-        settlementRewards(strategyAddress, userAddress);
-
-        // 3. update shares
-        if (shares > user.shares) {
-            shares = user.shares;
-        }
-
-        user.shares = user.shares.sub(shares);
-
-        if (shares > strategy.totalSupply) {
-            strategy.totalSupply = 0;
-        } else {
-            strategy.totalSupply = strategy.totalSupply.sub(shares);
-        }
-
-        // 3. reset reward debt base on current shares
-        updateRewardDebt(strategyAddress, userAddress);
-
-        emit LogRemoveUserShare(strategyAddress, userAddress, shares);
+        emit LogSharesUpdate(strategyAddress, userAddress, sharesUpdateTo);
     }
 
     // --------------------------------------------------------------
@@ -438,8 +409,7 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
     // Events
     // --------------------------------------------------------------
     event LogGrowMint(address to, uint256 amount);
-    event LogAddUserShare(address strategyAddress, address user, uint256 shares);
-    event LogRemoveUserShare(address strategyAddress, address user, uint256 shares);
+    event LogSharesUpdate(address strategyAddress, address user, uint256 shares);
     event LogSettlementRewards(address strategyAddress, address user, uint256 amount);
     event LogGetRewards(address strategyAddress, address user, uint256 amount);
 
