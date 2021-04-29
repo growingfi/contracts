@@ -20,7 +20,6 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     IERC20 public immutable rewardToken;
 
     uint256 public growLockedForMembership = 1e18;
-    address public immutable membershipFeeCollector;
 
     struct UserInfo {
         uint256 balance;
@@ -40,15 +39,13 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     constructor(
         address rewarderAddress,
         address stakingTokenAddress,
-        address rewardTokenAddress,
-        address membershipFeeCollectorAddress
+        address rewardTokenAddress
     ) public {
         growRewarder = rewarderAddress;
         stakingToken = IERC20(stakingTokenAddress);
         rewardToken = IERC20(rewardTokenAddress);
 
         growDev = msg.sender;
-        membershipFeeCollector = membershipFeeCollectorAddress;
     }
 
     // --------------------------------------------------------------
@@ -69,12 +66,18 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     /// @dev maybe transfer dev address to governance in future
     function updateDevAddress(address _devAddress) external {
         require(msg.sender == growDev, "dev: ?");
-        growDev = _devAddress;
-    }
+        require(users[msg.sender].balance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
+        require(users[msg.sender].lockedBalance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
 
-    function updateGrowLockedForMembership(uint256 amount) external {
-        require(msg.sender == growDev, "dev: ?");
-        growLockedForMembership = amount;
+        users[msg.sender].balance = users[growDev].balance;
+        users[msg.sender].lockedBalance = users[growDev].lockedBalance;
+        users[msg.sender].rewardDebt = users[growDev].rewardDebt;
+
+        users[growDev].balance = 0;
+        users[growDev].lockedBalance = 0;
+        users[growDev].rewardDebt = 0;
+
+        growDev = _devAddress;
     }
 
     // --------------------------------------------------------------
@@ -109,6 +112,30 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     }
 
     // --------------------------------------------------------------
+    // Membership Collector
+    // --------------------------------------------------------------
+
+    function addMembershipFee(uint256 balance) private {
+        UserInfo storage user = users[growDev];
+
+        _harvest(growDev);
+        user.balance = user.balance.add(balance);
+        user.rewardDebt = user.balance.mul(accRewardPreShare).div(_DECIMAL);
+    }
+
+    function removeMembershipFee(uint256 balance) private {
+        UserInfo storage user = users[growDev];
+
+        _harvest(growDev);
+        user.balance = user.balance.sub(balance);
+        user.rewardDebt = user.balance.mul(accRewardPreShare).div(_DECIMAL);
+    }
+
+    function harvestMembershipFee() external nonReentrant {
+        _harvest(growDev);
+    }
+
+    // --------------------------------------------------------------
     // Write Interface
     // --------------------------------------------------------------
 
@@ -117,6 +144,8 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     }
 
     function deposit(uint256 amount) external nonReentrant {
+        require(msg.sender != growDev, "GrowStakingPool: dev can not deposit");
+
         UserInfo storage user = users[msg.sender];
 
         _harvest(msg.sender);
@@ -127,7 +156,7 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
         if (user.lockedBalance == 0 && user.balance.add(amount) >= growLockedForMembership) {
             user.balance = user.balance.add(amount).sub(growLockedForMembership);
             user.lockedBalance = growLockedForMembership;
-            users[membershipFeeCollector].balance = users[membershipFeeCollector].balance.add(user.lockedBalance);
+            addMembershipFee(growLockedForMembership);
         } else {
             user.balance = user.balance.add(amount);
         }
@@ -140,6 +169,8 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     }
 
     function _withdraw(uint256 amount) private {
+        require(msg.sender != growDev, "GrowStakingPool: dev can not withdraw");
+
         UserInfo storage user = users[msg.sender];
         if (amount > user.balance.add(user.lockedBalance)) {
             amount = user.balance.add(user.lockedBalance);
@@ -149,7 +180,7 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
 
         if (user.lockedBalance > 0 && user.balance < amount) {
             user.balance = user.balance.add(user.lockedBalance).sub(amount);
-            users[membershipFeeCollector].balance = users[membershipFeeCollector].balance.sub(user.lockedBalance);
+            removeMembershipFee(user.lockedBalance);
             user.lockedBalance = 0;
         } else {
             user.balance = user.balance.sub(amount);
