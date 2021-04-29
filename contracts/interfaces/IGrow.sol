@@ -6,9 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IGrowRewarder {
 
     struct UserInfo {
-        // token amount the user has provided.
-        uint256 shares;
-
         // block reward
         uint256 blockRewardDebt;
 
@@ -41,8 +38,7 @@ interface IGrowRewarder {
 
     function depositRewardAddReward(address strategyAddress, address userAddress, uint256 amountInNativeToken) external;
     function profitRewardAddReward(address strategyAddress, address profitToken, address userAddress, uint256 profitTokenAmount) external;
-    function addUserShare(address strategyAddress, address userAddress, uint256 shares) external;
-    function removeUserShare(address strategyAddress, address userAddress, uint256 shares) external;
+    function notifyUserSharesUpdate(address strategyAddress, address userAddress, uint256 sharesUpdateTo, bool isWithdraw) external;
     function getRewards(address strategyAddress, address userAddress) external;
 }
 
@@ -52,4 +48,13 @@ interface IGrowProfitReceiver {
 
 interface IGrowMembershipController {
     function hasMembership(address userAddress) external view returns (bool);
+}
+
+interface IGrowStrategy {
+    function totalShares() external view returns (uint256);
+    function sharesOf(address userAddress) external view returns (uint256);
+}
+
+interface IGrowStrategyWithEmergency {
+    function IS_EMERGENCY_MODE() external returns (bool);
 }
