@@ -7,14 +7,14 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IGrow.sol";
 
-abstract contract BaseGrowStrategy is Ownable {
+abstract contract BaseGrowStrategy is Ownable, IGrowStrategyWithEmergency, IGrowStrategy {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     uint256 constant _DECIMAL = 1e18;
 
     /// @dev total shares of this strategy
-    uint256 public totalShares;
+    uint256 public override totalShares;
 
     /// @dev user share
     mapping (address => uint256) internal userShares;
@@ -39,7 +39,7 @@ abstract contract BaseGrowStrategy is Ownable {
     // User Read interface (shares and principal)
     // --------------------------------------------------------------
 
-    function sharesOf(address account) public view returns (uint256) {
+    function sharesOf(address account) public override view returns (uint256) {
         return userShares[account];
     }
 
@@ -69,12 +69,8 @@ abstract contract BaseGrowStrategy is Ownable {
         growRewarder.profitRewardAddReward(address(this), profitToken, userAddress, profitTokenAmount);
     }
 
-    function _addUserShare(address userAddress, uint256 shares) internal onlyHasRewarder {
-        growRewarder.addUserShare(address(this), userAddress, shares);
-    }
-
-    function _removeUserShare(address userAddress, uint256 shares) internal onlyHasRewarder {
-        growRewarder.removeUserShare(address(this), userAddress, shares);
+    function _notifyUserSharesUpdate(address userAddress, uint256 shares, bool isWithdraw) internal onlyHasRewarder {
+        growRewarder.notifyUserSharesUpdate(address(this), userAddress, shares, isWithdraw);
     }
 
     function _getGrowRewards(address userAddress) internal onlyHasRewarder {
@@ -85,7 +81,7 @@ abstract contract BaseGrowStrategy is Ownable {
     // !! Emergency !!
     // --------------------------------------------------------------
 
-    bool public IS_EMERGENCY_MODE = false;
+    bool public override IS_EMERGENCY_MODE = false;
 
     modifier nonEmergency() {
         require(IS_EMERGENCY_MODE == false, "GrowStrategy: emergency mode.");
