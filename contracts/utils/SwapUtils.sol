@@ -28,7 +28,7 @@ contract SwapUtils {
     // Misc
     // --------------------------------------------------------------
 
-    IPancakeFactory private constant factory = IPancakeFactory(0xBCfCcbde45cE874adCB698cC183deBcF17952812);
+    IPancakeFactory private constant factory = IPancakeFactory(0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73);
 
     function tokenPriceInBNB(address _token, uint256 amount) view external returns(uint256) {
         address pair = factory.getPair(_token, address(WRAPPED_NATIVE_TOKEN));
@@ -49,6 +49,7 @@ contract SwapUtils {
             return 0;
         }
 
+        IERC20(tokenA).safeTransferFrom(msg.sender, address(this), amount);
         IERC20(tokenA).safeApprove(PCS_LIKE_ROUTER, 0);
         IERC20(tokenA).safeApprove(PCS_LIKE_ROUTER, amount);
 
@@ -65,6 +66,7 @@ contract SwapUtils {
         }
 
         uint256 balanceBefore = IERC20(tokenB).balanceOf(address(this));
+
         IPCSRouterLike(PCS_LIKE_ROUTER).swapExactTokensForTokens(
             amount,
             uint256(0),
@@ -73,6 +75,8 @@ contract SwapUtils {
             block.timestamp.add(1800)
         );
         uint256 exchangeAmount = IERC20(tokenB).balanceOf(address(this)).sub(balanceBefore);
+        IERC20(tokenB).safeApprove(msg.sender, 0);
+        IERC20(tokenB).safeApprove(msg.sender, exchangeAmount);
 
         return exchangeAmount;
     }
