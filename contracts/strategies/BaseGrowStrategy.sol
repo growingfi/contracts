@@ -161,7 +161,7 @@ abstract contract BaseGrowStrategy is Ownable, ReentrancyGuard, IGrowStrategy {
         }
 
         // notice shares change for rewarder
-        _notifyUserSharesUpdate(msg.sender, userShares[msg.sender].add(sharesAdded), true);
+        _notifyUserSharesUpdate(msg.sender, userShares[msg.sender].add(sharesAdded), false);
 
         // add our shares
         totalShares = totalShares.add(sharesAdded);
