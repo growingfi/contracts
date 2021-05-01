@@ -32,6 +32,9 @@ contract GrowVaultGrowBNBLP is ReentrancyGuard, Ownable {
     address public constant GROW_TOKEN = 0x8CEF274596d334FFa10f8976a920DDC81ba6e29b;
     address public constant WBNB_TOKEN = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
 
+    // not use in the contract
+    bool public constant IS_EMERGENCY_MODE = false;
+
     uint256 DUST = 1000;
 
     constructor(
