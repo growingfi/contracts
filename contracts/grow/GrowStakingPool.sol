@@ -53,26 +53,35 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     // --------------------------------------------------------------
 
     /// @notice Grow Master
-    address public immutable growRewarder;
+    address public growRewarder;
 
     modifier onlyGrowRewarder {
         require(msg.sender == address(growRewarder), "GrowStakingPool: caller is not on the GrowMaster");
         _;
     }
 
+    function updateGrowRewarder(address _growRewarder) external onlyOwner {
+        growRewarder = _growRewarder;
+    }
+
     /// @dev grow developer
     address public growDev;
 
     /// @dev maybe transfer dev address to governance in future
+
     function updateDevAddress(address _devAddress) external {
         require(msg.sender == growDev, "dev: ?");
-        require(users[msg.sender].balance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
-        require(users[msg.sender].lockedBalance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
 
-        users[msg.sender].balance = users[growDev].balance;
-        users[msg.sender].lockedBalance = users[growDev].lockedBalance;
-        users[msg.sender].rewardDebt = users[growDev].rewardDebt;
+        // make sure _devAddress dont have balance
+        require(users[_devAddress].balance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
+        require(users[_devAddress].lockedBalance == 0, "GrowStakingPool: dev account can't have any balance in current pool");
 
+        // move balance to _devAddress
+        users[_devAddress].balance = users[growDev].balance;
+        users[_devAddress].lockedBalance = users[growDev].lockedBalance;
+        users[_devAddress].rewardDebt = users[growDev].rewardDebt;
+
+        // remove growDev balance
         users[growDev].balance = 0;
         users[growDev].lockedBalance = 0;
         users[growDev].rewardDebt = 0;
@@ -102,7 +111,7 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
     // Read Interface
     // --------------------------------------------------------------
 
-    function pendingReward(address userAddress) external view returns (uint256) {
+    function pendingRewards(address userAddress) external view returns (uint256) {
         UserInfo storage user = users[userAddress];
         return user.balance.mul(accRewardPreShare).div(_DECIMAL).sub(user.rewardDebt);
     }
@@ -135,11 +144,19 @@ contract GrowStakingPool is IGrowProfitReceiver, IGrowMembershipController, Owna
         _harvest(growDev);
     }
 
+    function totalShares() public view returns(uint256) {
+        return totalSupply;
+    }
+
+    function sharesOf(address userAddress) public view returns(uint256) {
+        return users[userAddress].balance;
+    }
+
     // --------------------------------------------------------------
     // Write Interface
     // --------------------------------------------------------------
 
-    function harvest() external nonReentrant {
+    function getRewards() external nonReentrant {
         _harvest(msg.sender);
     }
 
