@@ -104,6 +104,7 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
                 .mul(multiplier)
                 .div(REWARD_DECIMAL);
 
+            growMinter.mintForReward(growRewardAmount);
             growMinter.addPendingRewards(strategyAddress, userAddress, growRewardAmount);
         }
 
@@ -130,10 +131,16 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
         // 1. settlement current rewards
         settlementRewards(strategyAddress, userAddress);
 
+        uint256 pendingGrows = growMinter.getPendingRewards(strategyAddress, userAddress);
+        uint256 currentRewarderBalance = IERC20(growMinter.GROW()).balanceOf(address(growMinter));
+        if (pendingGrows > currentRewarderBalance) {
+            growMinter.mintForReward(pendingGrows.sub(currentRewarderBalance));
+        }
+
         // 2. transfer
         growMinter.transferPendingGrow(strategyAddress, userAddress);
 
-        // emit LogGetRewards(strategyAddress, userAddress, rewardPending);
+        emit LogGetRewards(strategyAddress, userAddress, pendingGrows);
     }
 
     function getRewards(address strategyAddress, address userAddress) external override onlyStrategy(strategyAddress) {
@@ -154,9 +161,6 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
 
         (,, uint256 accGrowPerShare) = growMinter.getBlockRewardConfig(strategyAddress);
         uint256 blockRewardDebt = growMinter.getBlockRewardUserInfo(strategyAddress, userAddress);
-
-        // 2. collect all rewards
-        uint256 rewardGrows = 0;
 
         // reward by shares (Block reward & Profit reward)
         if (currentUserShares > 0) {
@@ -179,7 +183,7 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
         // deposit reward
         growMinter.unlockLockedRewards(strategyAddress, userAddress, false);
 
-        emit LogSettlementRewards(strategyAddress, userAddress, rewardGrows);
+        emit LogSettlementRewards(strategyAddress, userAddress, growMinter.getPendingRewards(strategyAddress, userAddress));
     }
 
     // --------------------------------------------------------------
