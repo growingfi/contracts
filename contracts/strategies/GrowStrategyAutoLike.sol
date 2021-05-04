@@ -95,12 +95,12 @@ contract GrowStrategyAutoLike is BaseGrowStrategy {
     // --------------------------------------------------------------
 
     function _depositUnderlying(uint256 amount) internal override returns (uint256) {
-        uint256 underlyingWantTokenAmountBefore = _underlyingWantTokenAmount();
+        uint256 underlyingSharesAmountBefore = _underlyingShareAmount();
 
         approveToken(STAKING_TOKEN, MASTER_CHEF_LIKE, amount);
         IMasterChefLike(MASTER_CHEF_LIKE).deposit(MASTER_CHEF_LIKE_POOL_ID, amount);
 
-        return _underlyingWantTokenAmount().sub(underlyingWantTokenAmountBefore);
+        return _underlyingShareAmount().sub(underlyingSharesAmountBefore).mul(_underlyingWantTokenPreShares()).div(_DECIMAL);
     }
 
     function _withdrawUnderlying(uint256 amount) internal override returns (uint256) {
