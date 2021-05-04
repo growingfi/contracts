@@ -4,7 +4,7 @@ GrowToken: [0x8CEF274596d334FFa10f8976a920DDC81ba6e29b](https://bscscan.com/addr
 
 GrowMinter: [0xE2009352AE22CD1cFD4C89110Fb0e9225a89Cf8C](https://bscscan.com/address/0xE2009352AE22CD1cFD4C89110Fb0e9225a89Cf8C#code)
 
-GrowRewarder: [0xbAfCac62F53275B4aa2D903AE4608D38E8F6733D](https://bscscan.com/address/0xbAfCac62F53275B4aa2D903AE4608D38E8F6733D#code)
+GrowRewarder: [0x50c475a51e7943d18936d58a6B5941f98dB75a64](https://bscscan.com/address/0x50c475a51e7943d18936d58a6B5941f98dB75a64#code)
 
 GrowStakingPool: [0x184D7b54685bb3DF8Dcf68233a6Eb1d17D4F846E](https://bscscan.com/address/0x184D7b54685bb3DF8Dcf68233a6Eb1d17D4F846E#code)
 
