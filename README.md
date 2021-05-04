@@ -8,7 +8,7 @@ GrowRewarder: [0x50c475a51e7943d18936d58a6B5941f98dB75a64](https://bscscan.com/a
 
 GrowStakingPool: [0x184D7b54685bb3DF8Dcf68233a6Eb1d17D4F846E](https://bscscan.com/address/0x184D7b54685bb3DF8Dcf68233a6Eb1d17D4F846E#code)
 
-GrowStrategyAutoLike: [0x7ef96d90bcccd27b545ba97d64fd8ebad0f9814c](https://bscscan.com/address/0x7ef96d90bcccd27b545ba97d64fd8ebad0f9814c#code)
+GrowStrategyAutoLike: [0xFddd5025aF59A8b704AFc6C27211B1fCDdCa710d](https://bscscan.com/address/0xFddd5025aF59A8b704AFc6C27211B1fCDdCa710d#code)
 
 Timelock: [0xaa9E7E7987D0b0DA8e0A454d10b9306a2bf51169](https://bscscan.com/address/0xaa9E7E7987D0b0DA8e0A454d10b9306a2bf51169#code)
 
