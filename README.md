@@ -18,6 +18,12 @@ GrowStrategyAlpacaBNB: [0x1735783c26731789933A8Cd308253a5F4FFA0802](https://bscs
 
 GrowStrategyAlpaca(Alpaca BUSD): [0xD0c27bA118483a6449E11C7f260434BAF9DF4f3D](https://bscscan.com/address/0xD0c27bA118483a6449E11C7f260434BAF9DF4f3D#code)
 
+GrowStrategyAlpaca(Alpaca BTCB): [0x312B790c7a55E95B63ce965226e93f5E21E508b1](https://bscscan.com/address/0x312B790c7a55E95B63ce965226e93f5E21E508b1#code)
+
+GrowStrategyAlpaca(Alpaca ETH): [0x23026068d258d386b0899896358269879e4d4FE7](https://bscscan.com/address/0x23026068d258d386b0899896358269879e4d4FE7#code)
+
+GrowStrategyAlpaca(Alpaca USDT): [0x6eb921feb3B34a5cd5584d523167B400513FF8fe](https://bscscan.com/address/0x6eb921feb3B34a5cd5584d523167B400513FF8fe#code)
+
 SwapUtils(Pancake): [0xBcE1Dca1315f0B5eF756c1e318F644C7958316b2](https://bscscan.com/address/0xBcE1Dca1315f0B5eF756c1e318F644C7958316b2#code)
 
 SwapUtils(Ape): [0xCD1Bd22b3BEB57697Bdbb5d0feE63C73fc194786](https://bscscan.com/address/0xCD1Bd22b3BEB57697Bdbb5d0feE63C73fc194786#code)
