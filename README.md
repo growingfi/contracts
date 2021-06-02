@@ -10,8 +10,6 @@ GrowStakingPool: [0x184D7b54685bb3DF8Dcf68233a6Eb1d17D4F846E](https://bscscan.co
 
 GrowStrategyAutoLike(Swamp Cake): [0xFddd5025aF59A8b704AFc6C27211B1fCDdCa710d](https://bscscan.com/address/0xFddd5025aF59A8b704AFc6C27211B1fCDdCa710d#code)
 
-GrowStrategyAutoLike(Swamp Swamp): [0xFFDe776c6156F653C649d92FbE0768dbCd918882](https://bscscan.com/address/0xFFDe776c6156F653C649d92FbE0768dbCd918882#code)
-
 GrowStrategyAutoLike(Auto Banana): [0x4DC97e7474e1bE0553b24De1A4411444670F58F1](https://bscscan.com/address/0x4DC97e7474e1bE0553b24De1A4411444670F58F1#code)
 
 Timelock: [0xaa9E7E7987D0b0DA8e0A454d10b9306a2bf51169](https://bscscan.com/address/0xaa9E7E7987D0b0DA8e0A454d10b9306a2bf51169#code)
