@@ -73,6 +73,8 @@ abstract contract BaseGrowStrategy is Ownable, ReentrancyGuard, IGrowStrategy {
     }
 
     function _swap(address tokenA, address tokenB, uint256 amount) internal returns (uint256) {
+        if (tokenA == tokenB) return amount;
+
         approveToken(tokenA, SWAP_UTILS, amount);
         uint256 tokenReceived = SwapUtils(SWAP_UTILS).swap(tokenA, tokenB, amount);
         IERC20(tokenB).transferFrom(SWAP_UTILS, address(this), tokenReceived);
