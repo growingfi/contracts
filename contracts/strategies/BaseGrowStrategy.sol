@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IGrow.sol";
 import "../utils/SwapUtils.sol";
 
@@ -120,20 +121,20 @@ abstract contract BaseGrowStrategy is Ownable, ReentrancyGuard, IGrowStrategy {
     // User Write Interface
     // --------------------------------------------------------------
 
-    function harvest() external nonEmergency nonReentrant {
+    function harvest() external virtual nonEmergency nonReentrant {
         _harvest();
     }
 
-    function withdraw(uint256 principalAmount) external nonEmergency nonReentrant {
+    function withdraw(uint256 principalAmount) external virtual nonEmergency nonReentrant {
         _withdraw(principalAmount);
     }
 
-    function withdrawAll() external nonEmergency nonReentrant {
+    function withdrawAll() external virtual nonEmergency nonReentrant {
         _withdraw(uint256(~0));
         _getRewards();
     }
 
-    function getRewards() external nonEmergency nonReentrant {
+    function getRewards() external virtual nonEmergency nonReentrant {
         _getRewards();
     }
 
