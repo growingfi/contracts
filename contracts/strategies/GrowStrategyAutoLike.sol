@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IGrow.sol";
 import "./BaseGrowStrategy.sol";
 import "../utils/SwapUtils.sol";
@@ -43,7 +42,7 @@ contract GrowStrategyAutoLike is BaseGrowStrategy {
     address public immutable AUTO_STRATX;
 
     /// @dev Staking token
-    address public immutable STAKING_TOKEN; //  = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82
+    address public immutable STAKING_TOKEN;
 
     constructor(
         address _rewarderAddress,
@@ -53,7 +52,7 @@ contract GrowStrategyAutoLike is BaseGrowStrategy {
         address _UNDERLYING_REWARD_TOKEN,
         address _AUTO_STRATX,
         address _STAKING_TOKEN
-    ) public  BaseGrowStrategy(_rewarderAddress, _SWAP_UTILS) {
+    ) public BaseGrowStrategy(_rewarderAddress, _SWAP_UTILS) {
         MASTER_CHEF_LIKE = _MASTER_CHEF_LIKE;
         MASTER_CHEF_LIKE_POOL_ID = _MASTER_CHEF_LIKE_POOL_ID;
         UNDERLYING_REWARD_TOKEN = _UNDERLYING_REWARD_TOKEN;
@@ -86,7 +85,7 @@ contract GrowStrategyAutoLike is BaseGrowStrategy {
     // User Write Interface
     // --------------------------------------------------------------
 
-    function deposit(uint256 wantTokenAmount) external nonEmergency nonReentrant {
+    function deposit(uint256 wantTokenAmount) external virtual nonEmergency nonReentrant {
         _deposit(wantTokenAmount);
     }
 
@@ -100,7 +99,7 @@ contract GrowStrategyAutoLike is BaseGrowStrategy {
         approveToken(STAKING_TOKEN, MASTER_CHEF_LIKE, amount);
         IMasterChefLike(MASTER_CHEF_LIKE).deposit(MASTER_CHEF_LIKE_POOL_ID, amount);
 
-        return _underlyingShareAmount().sub(underlyingSharesAmountBefore).mul(_underlyingWantTokenPreShares()).div(_DECIMAL);
+        return (_underlyingShareAmount().sub(underlyingSharesAmountBefore)).mul(_underlyingWantTokenPreShares()).div(_DECIMAL);
     }
 
     function _withdrawUnderlying(uint256 amount) internal override returns (uint256) {
