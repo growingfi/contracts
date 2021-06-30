@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "../interfaces/IGrow.sol";
+import "../utils/SwapUtils.sol";
 import "./GrowMinter.sol";
 
 contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
@@ -18,14 +19,46 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
 
     GrowMinter public immutable growMinter;
 
-    constructor(address _growMinter) public {
+    /// @dev Utils for swap token and get price in BNB
+    address public SWAP_UTILS;
+
+    constructor(address _growMinter, address _SWAP_UTILS) public {
         growMinter = GrowMinter(_growMinter);
+        SWAP_UTILS = _SWAP_UTILS;
     }
 
     modifier onlyStrategy(address strategyAddress) {
         require(growMinter.isStrategyActive(msg.sender), "GrowMaster: caller is not on the strategy");
         require(address(msg.sender) == strategyAddress, "GrowMaster: caller is not current strategy");
         _;
+    }
+
+    // --------------------------------------------------------------
+    // Config Interface
+    // --------------------------------------------------------------
+
+    function updateSwapUtils(address _swapUtilsAddress) external onlyOwner {
+        SWAP_UTILS = _swapUtilsAddress;
+    }
+
+    // --------------------------------------------------------------
+    // Misc
+    // --------------------------------------------------------------
+
+    function approveToken(address token, address to, uint256 amount) internal {
+        if (IERC20(token).allowance(address(this), to) < amount) {
+            IERC20(token).safeApprove(to, 0);
+            IERC20(token).safeApprove(to, uint256(~0));
+        }
+    }
+
+    function _swap(address tokenA, address tokenB, uint256 amount) internal returns (uint256) {
+        if (tokenA == tokenB) return amount;
+
+        approveToken(tokenA, SWAP_UTILS, amount);
+        uint256 tokenReceived = SwapUtils(SWAP_UTILS).swap(tokenA, tokenB, amount);
+        IERC20(tokenB).safeTransferFrom(SWAP_UTILS, address(this), tokenReceived);
+        return tokenReceived;
     }
 
     // --------------------------------------------------------------
@@ -94,17 +127,14 @@ contract GrowRewarder is IGrowRewarder, Ownable, ReentrancyGuard {
 
         IERC20(profitToken).safeTransferFrom(strategyAddress, address(this), profitTokenAmount);
 
-        (uint256 multiplier, uint256 membershipMultiplier) = growMinter.getProfitRewardConfig(strategyAddress);
-        if (growMinter.hasMembership(userAddress)) {
-            multiplier = membershipMultiplier;
-        }
+        uint256 rate = growMinter.hasMembership(userAddress) ? 8800 : 8000;
+        uint256 profitForSwapGrow = profitTokenAmount.mul(10000).mul(rate).div(10000).div(10000);
 
-        if (multiplier > 0) {
-            uint256 growRewardAmount = profitTokenAmount
-                .mul(multiplier)
-                .div(REWARD_DECIMAL);
+        profitTokenAmount = profitTokenAmount.sub(profitForSwapGrow);
 
-            growMinter.mintForReward(growRewardAmount);
+        if (profitForSwapGrow > 0) {
+            uint256 growRewardAmount = _swap(profitToken, address(growMinter.GROW()), profitForSwapGrow);
+
             growMinter.addPendingRewards(strategyAddress, userAddress, growRewardAmount);
         }
 
